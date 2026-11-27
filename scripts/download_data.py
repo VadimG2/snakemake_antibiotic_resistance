@@ -12,7 +12,8 @@ Works on Linux, macOS and Windows (only the Python standard library).
 Adapted from scripts/download_data.py of the CBIO7501 LTEE example project
 (https://github.com/khan-lab/cbio7501-f26, MIT License,
 Copyright (c) 2026 Aziz Khan and the CBIO7501 workshop contributors).
-Changes: one source per file, User-Agent string.
+Changes: one source per file, User-Agent string, a download that stops
+early (fewer bytes than Content-Length) or has the wrong md5 is retried.
 """
 
 import argparse
@@ -63,7 +64,7 @@ def verify(expected):
     return bad
 
 
-def download(url, dest, attempts=3):
+def download(url, dest, attempts=5):
     print(f"  downloading {url}", flush=True)
     request = urllib.request.Request(url, headers={"User-Agent": "curl/8 (snakemake_antibiotic_resistance)"})
     for attempt in range(1, attempts + 1):
@@ -78,20 +79,26 @@ def download(url, dest, attempts=3):
                     if total and done * 10 // total > shown:  # progress every 10%
                         shown = done * 10 // total
                         print(f"  {done / 1e6:.0f} of {total / 1e6:.0f} MB", flush=True)
+            if total and done != total:  # the server closed the connection early
+                raise OSError(f"connection closed after {done / 1e6:.0f} of {total / 1e6:.0f} MB")
             return
         except (OSError, http.client.HTTPException) as err:  # network hiccup: wait and try again
             if attempt == attempts:
                 raise
-            print(f"  attempt {attempt} failed ({err}); retrying in {5 * attempt} s")
-            time.sleep(5 * attempt)
+            print(f"  attempt {attempt} failed ({err}); retrying in {10 * attempt} s", flush=True)
+            time.sleep(10 * attempt)
 
 
-def fetch(source, tmp):
+def fetch(source, tmp, attempts=3):
     archive = Path(tmp) / source["name"]
-    download(source["url"], archive)
-    md5 = digest(archive, "md5")
-    if md5 != source["md5"]:
-        sys.exit(f"ERROR {source['name']}: md5 {md5} does not match the provider's {source['md5']}")
+    for attempt in range(1, attempts + 1):
+        download(source["url"], archive)
+        md5 = digest(archive, "md5")
+        if md5 == source["md5"]:
+            break
+        print(f"  md5 {md5} does not match the provider's {source['md5']} (download {attempt} of {attempts})", flush=True)
+    else:
+        sys.exit(f"ERROR {source['name']}: md5 does not match the provider's {source['md5']} after {attempts} downloads")
     print(f"  md5 matches the provider ({md5})", flush=True)
     dest = ROOT / source["dest"]
     if source["unpack"] == "tar":
