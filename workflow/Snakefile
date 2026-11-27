@@ -44,7 +44,7 @@ rule fastqc:
     params:
         outdir="test_output/fastqc"
     conda:
-        "envs/fastqc.yaml"
+        "../envs/fastqc.yaml"
     shell:
         """
         fastqc {input.r1} {input.r2} -o {params.outdir}
@@ -59,7 +59,7 @@ rule spades:
         threads=min(params["spades"]["threads"], 2),
         memory=params["spades"]["memory"]
     conda:
-        "envs/spades.yaml"
+        "../envs/spades.yaml"
     shell:
         """
         spades.py -1 {input.r1} -2 {input.r2} -o test_output/spades/{wildcards.sample_id} -t {params.threads} -m {params.memory}
@@ -73,7 +73,7 @@ rule quast:
     params:
         reference=params["quast"]["reference"] if "reference" in params["quast"] else ""
     conda:
-        "envs/quast.yaml"
+        "../envs/quast.yaml"
     shell:
         """
         quast.py {input.scaffolds} -o test_output/quast/{wildcards.sample_id} {params.reference}
@@ -87,7 +87,7 @@ rule prokka:
     params:
         outdir="test_output/prokka/{sample_id}"
     conda:
-        "envs/prokka.yaml"
+        "../envs/prokka.yaml"
     shell:
         """
         prokka --outdir {params.outdir} --prefix scaffolds_annotation --force {input}
@@ -103,7 +103,7 @@ rule abricate:
     params:
         database=params["abricate"]["database"]
     conda:
-        "envs/abricate.yaml"
+        "../envs/abricate.yaml"
     shell:
         """
         abricate --db ncbi {input} > {output.ncbi}
