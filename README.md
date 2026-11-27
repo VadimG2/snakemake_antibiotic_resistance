@@ -13,6 +13,7 @@ which enters as a ready assembly (the pipeline accepts reads or assemblies).
 
 Author: VadimG2 (<https://github.com/VadimG2>). Capstone project of CBIO7501
 *The Art of Reproducible and Open Science* (fall 2026).
+Email: vadim.gvozdev@mbzuai.ac.ae
 
 ## Publication
 
