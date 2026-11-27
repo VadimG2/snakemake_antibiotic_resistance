@@ -2,7 +2,7 @@
 channels = ["conda-forge", "bioconda"]
 name = "snakemake_antibiotic_resistance"
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
-version = "1.0.0"
+version = "1.0.1"
 description = "Assembly, annotation and antimicrobial resistance gene detection in Staphylococcus aureus isolates"
 
 [tasks]

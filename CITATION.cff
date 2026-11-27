@@ -8,10 +8,12 @@ abstract: >-
   Staphylococcus aureus isolates and the USA300_FPR3757 reference genome.
 type: software
 authors:
-  - alias: "VadimG2"
+  - given-names: "Vadim"
+    family-names: "Gvozdev"
+    alias: "VadimG2"
 repository-code: "https://github.com/VadimG2/snakemake_antibiotic_resistance"
 license: MIT
-version: 1.0.0
+version: 1.0.1
 date-released: "2026-11-27"
 keywords:
   - reproducibility
