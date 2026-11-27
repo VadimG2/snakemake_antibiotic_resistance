@@ -1,0 +1,7 @@
+# Quarto settings for this project.
+project:
+  # Run code in reports from the project folder, so paths like
+  # "results/tables/amr_hits.tsv" work as in the scripts.
+  execute-dir: project
+  render:
+    - reports/*.qmd

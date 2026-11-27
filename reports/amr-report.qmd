@@ -1,0 +1,267 @@
+---
+title: "Antimicrobial resistance genes in *Staphylococcus aureus* isolates"
+subtitle: "Assembly, annotation and AMR screening of three clinical isolates and the USA300 reference genome"
+author: "VadimG2"
+date: today
+format:
+  html:
+    embed-resources: true
+    toc: true
+    code-fold: true
+    code-tools: true
+execute:
+  warning: false
+bibliography: references.bib
+jupyter: python3
+---
+
+## Question
+
+Methicillin resistance in *Staphylococcus aureus* (MRSA) is caused by the
+*mecA* gene, carried on the SCC*mec* cassette [@katayama2000]. Does a
+standard short-read pipeline (SPAdes assembly, Prokka annotation, Abricate
+screening) recover the reported methicillin phenotype of each isolate from its
+genome, and which other acquired resistance genes do the isolates carry?
+
+Every number, table and figure below is computed from the workflow outputs in
+`results/tables/` when this report renders (`pixi run report`).
+
+```{python}
+#| label: setup
+import sys
+from pathlib import Path
+
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+
+TABLES = Path("results/tables")
+samples = pd.read_csv("metadata/samples.tsv", sep="\t", keep_default_na=False)
+assembly = pd.read_csv(TABLES / "assembly_stats.tsv", sep="\t")
+reads = pd.read_csv(TABLES / "read_stats.tsv", sep="\t")
+annotation = pd.read_csv(TABLES / "annotation_stats.tsv", sep="\t")
+hits = pd.read_csv(TABLES / "amr_hits.tsv", sep="\t", keep_default_na=False)
+versions = pd.read_csv(TABLES / "software_versions.tsv", sep="\t")
+databases = pd.read_csv(TABLES / "abricate_databases.tsv", sep="\t")
+
+order = list(samples["sample"])
+phenotype = dict(zip(samples["sample"], samples["phenotype"]))
+n_samples = len(samples)
+n_reads_samples = int((samples["fastq_1"] != "").sum())
+
+
+def show(df):
+    """Display a table without the row numbers."""
+    return df.style.hide(axis="index").format(precision=2, thousands=",")
+```
+
+## Data
+
+`{python} n_samples` isolates (@tbl-samples): `{python} n_reads_samples` with
+Illumina MiSeq paired-end reads from the European Nucleotide Archive, and the
+complete genome of the epidemic community-acquired MRSA clone USA300_FPR3757
+[@diep2006] from NCBI, which enters the pipeline as a ready assembly and
+serves as a positive control. The phenotypes are those reported by the
+submitters.
+
+```{python}
+#| label: tbl-samples
+#| tbl-cap: "Isolates, their reported methicillin phenotype and the accession of their data."
+show(samples[["sample", "strain", "phenotype", "country", "study", "biosample", "run_or_assembly"]])
+```
+
+### Reads
+
+```{python}
+#| label: tbl-reads
+#| tbl-cap: "Read files (FastQC): number of reads, read length range and GC content."
+reads_wide = reads.assign(read=lambda d: "R" + d["read"].astype(str))
+show(reads_wide[["sample", "read", "sequences", "length", "gc_percent"]])
+```
+
+## Assemblies
+
+```{python}
+#| label: tbl-assembly
+#| tbl-cap: "Assembly statistics from QUAST (contigs of at least 500 bp)."
+show(assembly.set_index("sample").loc[order].reset_index())
+```
+
+```{python}
+#| label: assembly-numbers
+spades = assembly[assembly["source"] == "SPAdes"]
+length_min, length_max = spades["total_length"].min() / 1e6, spades["total_length"].max() / 1e6
+ref_length = assembly.loc[assembly["source"] == "provided", "total_length"].iloc[0] / 1e6
+most_fragmented = spades.loc[spades["contigs"].idxmax()]
+```
+
+The SPAdes assemblies are `{python} f"{length_min:.2f}"`–`{python} f"{length_max:.2f}"`
+Mb long, close to the `{python} f"{ref_length:.2f}"` Mb of the complete
+USA300 genome. They differ in contiguity (@fig-assembly):
+`{python} most_fragmented["sample"]` is the most fragmented, with
+`{python} int(most_fragmented["contigs"])` contigs and an N50 of
+`{python} f"{most_fragmented['n50'] / 1e3:.0f}"` kb.
+
+```{python}
+#| label: fig-assembly
+#| fig-cap: "Number of contigs (left, log scale) and N50 (right, log scale) of each assembly. The reference genome USA300_FPR3757 is complete (one chromosome and plasmids)."
+#| fig-alt: "Two bar charts side by side, one bar per isolate. Left: number of contigs on a log scale; the reference genome has a handful of contigs, the MSSA assembly a few dozen, and the two MRSA assemblies several hundred. Right: N50 on a log scale; the reference genome has an N50 equal to its chromosome length, about 2.9 Mb, the MSSA assembly about 200 kb, and the two MRSA assemblies below about 20 kb."
+data = assembly.set_index("sample").loc[order]
+colours = ["#b2182b" if phenotype[s] == "MRSA" else "#2166ac" for s in data.index]
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+axes[0].bar(data.index, data["contigs"], color=colours)
+axes[0].set_ylabel("contigs (≥ 500 bp)")
+axes[1].bar(data.index, data["n50"] / 1e3, color=colours)
+axes[1].set_ylabel("N50 (kb)")
+for ax in axes:
+    ax.set_yscale("log")
+    ax.tick_params(axis="x", rotation=30)
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment("right")
+axes[0].legend(handles=[plt.Rectangle((0, 0), 1, 1, color="#b2182b"), plt.Rectangle((0, 0), 1, 1, color="#2166ac")],
+               labels=["MRSA", "MSSA"], frameon=False)
+fig.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: tbl-annotation
+#| tbl-cap: "Features annotated by Prokka in each assembly."
+cols = [c for c in ["sample", "contigs", "bases", "CDS", "rRNA", "tRNA", "tmRNA"] if c in annotation.columns]
+show(annotation.set_index("sample").loc[order].reset_index()[cols])
+```
+
+## Resistance genes
+
+```{python}
+#| label: amr-numbers
+ncbi = hits[hits["database"] == "ncbi"]
+genes_per_sample = ncbi.groupby("sample")["gene"].apply(set).reindex(order, fill_value=set())
+has_meca = {s: "mecA" in genes_per_sample[s] for s in order}
+agree = [s for s in order if has_meca[s] == (phenotype[s] == "MRSA")]
+n_mrsa = sum(p == "MRSA" for p in phenotype.values())
+n_meca_in_mrsa = sum(has_meca[s] for s in order if phenotype[s] == "MRSA")
+n_meca_in_mssa = sum(has_meca[s] for s in order if phenotype[s] == "MSSA")
+n_genes = ncbi["gene"].nunique()
+```
+
+**Main result.** *mecA* was found in `{python} n_meca_in_mrsa` of the
+`{python} n_mrsa` MRSA isolates and in `{python} n_meca_in_mssa` of the
+`{python} n_samples - n_mrsa` MSSA isolate(s): the genotype agrees with the
+reported phenotype for `{python} len(agree)` of `{python} n_samples`
+isolates (@tbl-meca). Across all isolates, the NCBI AMRFinder database gives
+`{python} n_genes` different resistance genes (@fig-amr).
+
+```{python}
+#| label: tbl-meca
+#| tbl-cap: "Reported methicillin phenotype and *mecA* found in the genome (NCBI AMRFinder database, at least 80 % identity and 80 % coverage)."
+show(pd.DataFrame({
+    "sample": order,
+    "reported phenotype": [phenotype[s] for s in order],
+    "mecA found": ["yes" if has_meca[s] else "no" for s in order],
+    "agrees": ["yes" if s in agree else "no" for s in order],
+}))
+```
+
+```{python}
+#| label: fig-amr
+#| fig-cap: "Acquired resistance genes found by Abricate with the NCBI AMRFinder database (identity and coverage at least 80 %). A filled cell means the gene is present; the label on the right is the antibiotic class."
+#| fig-alt: "Grid with one column per isolate and one row per resistance gene, filled cells where the gene is present. mecA is filled for the two Japanese MRSA isolates and for USA300_FPR3757 but not for the Dublin MSSA isolate. The penicillinase operon (blaZ with its regulators blaI and blaR1) is present in the MSSA isolate and in one MRSA isolate. Other genes, such as erm(A), erm(C), tet(K), mupA, ant(9)-Ia and fosB, are present in one or two isolates each."
+def short_class(drugs, width=28):
+    """'a;b;c' -> 'a, b, …' so the labels stay short."""
+    names, label = drugs.split(";"), ""
+    for name in names:
+        candidate = f"{label}, {name}" if label else name
+        if len(candidate) > width:
+            return label + ", …"
+        label = candidate
+    return label
+
+
+classes = ncbi.groupby("gene")["resistance"].first()
+matrix = (ncbi.assign(present=1)
+          .pivot_table(index="gene", columns="sample", values="present", aggfunc="max", fill_value=0)
+          .reindex(columns=order, fill_value=0))
+matrix = matrix.loc[sorted(matrix.index, key=lambda g: (g != "mecA", classes[g], g))]
+fig, ax = plt.subplots(figsize=(8, 0.4 * len(matrix) + 1.5))
+ax.imshow(matrix.values, cmap="Greys", vmin=0, vmax=1.4, aspect="auto")
+ax.set_xticks(range(len(order)), labels=[f"{s}\n{phenotype[s]}" for s in order], fontsize=8)
+ax.xaxis.tick_top()
+ax.set_yticks(range(len(matrix)), labels=matrix.index, fontstyle="italic")
+ax.set_xticks([x - 0.5 for x in range(1, len(order))], minor=True)
+ax.set_yticks([y - 0.5 for y in range(1, len(matrix))], minor=True)
+ax.grid(which="minor", color="white", linewidth=2)
+ax.tick_params(which="minor", length=0)
+right = ax.secondary_yaxis("right")
+right.set_yticks(range(len(matrix)), labels=[short_class(classes[g].lower()) for g in matrix.index], fontsize=8)
+fig.tight_layout()
+plt.show()
+```
+
+The ResFinder database finds the same acquired genes (@tbl-resfinder); NCBI
+AMRFinder also reports the regulators of the penicillinase operon (*blaI*,
+*blaR1*) and *fosB*, which is common in the *S. aureus* chromosome.
+
+```{python}
+#| label: tbl-resfinder
+#| tbl-cap: "Resistance genes per isolate in the ResFinder and NCBI AMRFinder databases."
+summary = (hits[hits["database"].isin(["resfinder", "ncbi"])]
+           .groupby(["sample", "database"])["gene"]
+           .apply(lambda g: ", ".join(sorted(set(g))))
+           .unstack("database")
+           .reindex(order)
+           .reset_index())
+show(summary)
+```
+
+### Notes on individual isolates
+
+```{python}
+#| label: notes
+gram_negative_like = sorted(g for g in ncbi["gene"].unique() if g.startswith("blaTEM"))
+carriers = sorted(ncbi.loc[ncbi["gene"].isin(gram_negative_like), "sample"].unique())
+vf = hits[hits["database"] == "vfdb"]
+pvl = [s for s in order if {"lukF-PV", "lukS-PV"} <= set(vf.loc[vf["sample"] == s, "gene"])]
+```
+
+- *bla*TEM genes (`{python} ", ".join(gram_negative_like) or "none"`) are
+  typical of Gram-negative bacteria, not of *S. aureus*. Found in:
+  `{python} ", ".join(carriers) or "none"`. This may point to contaminating
+  DNA in that library; we report it but draw no conclusion from it.
+- Panton-Valentine leukocidin (both *lukF-PV* and *lukS-PV* in VFDB), a
+  marker of community-acquired MRSA such as USA300 [@diep2006], is found in:
+  `{python} ", ".join(pvl) or "none"`.
+
+## Limitations
+
+The phenotypes are those reported in the BioSample records; we did not test
+susceptibility. Abricate detects genes by nucleotide similarity only: it
+does not detect resistance caused by point mutations, and genes split across
+contigs of fragmented assemblies can fall below the coverage threshold.
+Four genomes are an example, not a survey.
+
+## Software
+
+```{python}
+#| label: tbl-versions
+#| tbl-cap: "Versions of the pipeline tools (from the Pixi environment `pipeline`) and of the Python packages used in this report."
+python_rows = pd.DataFrame({
+    "tool": ["python", "pandas", "matplotlib"],
+    "version": [sys.version.split()[0], pd.__version__, matplotlib.__version__],
+})
+show(pd.concat([versions, python_rows], ignore_index=True))
+```
+
+```{python}
+#| label: tbl-databases
+#| tbl-cap: "Abricate databases used (bundled with the abricate package, so fixed by `pixi.lock`)."
+used = ["resfinder", "ncbi", "card", "vfdb"]
+show(databases[databases["DATABASE"].isin(used)])
+```
+
+The exact version of every package, for every platform, is in `pixi.lock`.
+
+## References
+
+::: {#refs}
+:::
