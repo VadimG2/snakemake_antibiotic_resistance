@@ -8,6 +8,8 @@ description = "Assembly, annotation and antimicrobial resistance gene detection 
 [tasks]
 download = { cmd = "python scripts/download_data.py", description = "Download the raw data and verify checksums" }
 verify-data = { cmd = "python scripts/download_data.py --verify-only", description = "Check the raw data without downloading" }
+report = { cmd = "quarto render reports/amr-report.qmd", depends-on = ["check-results"], description = "Render the Quarto report (reports/amr-report.html)" }
+reproduce = { depends-on = [{ task = "report" }], description = "Everything: data, workflow, checks, report" }
 
 [dependencies]
 python = "3.12.*"
