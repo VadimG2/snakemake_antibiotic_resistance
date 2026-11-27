@@ -32,5 +32,9 @@ prokka = "1.15.*"
 abricate = "1.4.*"
 setuptools = "<81"
 
+[feature.pipeline.tasks]
+run-snakemake = { cmd = "snakemake --cores 4", depends-on = ["download"], description = "Run the pipeline with Snakemake" }
+lint = { cmd = "snakefmt --check workflow/Snakefile", description = "Check the Snakefile style" }
+
 [environments]
 pipeline = ["pipeline"]
