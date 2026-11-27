@@ -36,3 +36,9 @@ resistant *Staphylococcus aureus*" (PRJDB10125), "WGS of MSSA recovered in
 Dublin hospital" (PRJNA818983). USA300_FPR3757 is the published MRSA
 reference genome (Diep et al. 2006).
 
+## expected_results.tsv
+
+The main results of a run on the author's computer (written with
+`python scripts/check_results.py --write`): resistance genes per isolate
+(ResFinder and NCBI AMRFinder databases), mecA present or not, and assembly
+length. `pixi run check-results` compares a new run with them.
