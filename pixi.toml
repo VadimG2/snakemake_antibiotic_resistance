@@ -35,6 +35,7 @@ setuptools = "<81"
 [feature.pipeline.tasks]
 run-snakemake = { cmd = "snakemake --cores 4", depends-on = ["download"], description = "Run the pipeline with Snakemake" }
 lint = { cmd = "snakefmt --check workflow/Snakefile", description = "Check the Snakefile style" }
+check-results = { cmd = "python scripts/check_results.py", depends-on = ["run-snakemake"], description = "Compare the main results with metadata/expected_results.tsv" }
 
 [environments]
 pipeline = ["pipeline"]

@@ -1,0 +1,17 @@
+sample	check	expected
+MRSA_K18-4-29	mecA	yes
+MRSA_K18-4-29	ncbi_genes	ant(9)-Ia;blaI_of_Z;blaR1;blaZ;erm(A);mecA
+MRSA_K18-4-29	resfinder_genes	ant(9)-Ia_1;blaZ_79;erm(A)_1;mecA_6
+MRSA_K18-4-29	total_length	2832786
+MRSA_K18-4-413	mecA	yes
+MRSA_K18-4-413	ncbi_genes	ant(9)-Ia;blaTEM-1;erm(A);mecA
+MRSA_K18-4-413	resfinder_genes	ant(9)-Ia_1;blaTEM-104_1;erm(A)_1;mecA_6
+MRSA_K18-4-413	total_length	2745055
+MSSA_Dublin	mecA	no
+MSSA_Dublin	ncbi_genes	blaI_of_Z;blaR1;blaZ;fosB_gen
+MSSA_Dublin	resfinder_genes	blaZ_29
+MSSA_Dublin	total_length	2852238
+USA300_FPR3757	mecA	yes
+USA300_FPR3757	ncbi_genes	erm(C);fosB_gen;mecA;mupA;tet(K)
+USA300_FPR3757	resfinder_genes	erm(C)_13;mecA_6;mupA_2;tet(K)_1
+USA300_FPR3757	total_length	2917469
