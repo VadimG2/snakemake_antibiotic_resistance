@@ -1,0 +1,37 @@
+# Settings of the Snakemake workflow (workflow/Snakefile). Change them here,
+# not in the code; Snakemake reruns the steps whose settings changed.
+# Override one setting for a single run:
+#   pixi run -e pipeline snakemake --cores 4 --config outdir=results-test
+
+# Sample sheet: one row per isolate. A row has either two FASTQ files
+# (assembled with SPAdes) or a ready assembly (SPAdes and FastQC skipped).
+samples: metadata/samples.tsv
+
+# Where every result goes (not committed; rebuilt by `pixi run reproduce`).
+outdir: results
+
+spades:
+  threads: 4
+  memory_gb: 12        # SPAdes stops if it needs more (GitHub runners: 16 GB)
+  # --isolate: SPAdes' recommended mode for high-coverage bacterial isolates.
+  extra: "--isolate"
+
+quast:
+  threads: 2
+  # Optional reference genome (FASTA) for QUAST; leave empty for none.
+  reference: ""
+  min_contig: 500      # QUAST's default
+
+prokka:
+  threads: 4
+  kingdom: Bacteria
+  genus: Staphylococcus
+  # --compliant renames contigs (SPAdes names can exceed Prokka's 37
+  # characters) and drops contigs shorter than 200 bp.
+  extra: "--compliant --centre AMR --usegenus"
+
+abricate:
+  # Databases bundled with the abricate package (versions fixed by pixi.lock).
+  databases: [resfinder, ncbi, card, vfdb]
+  min_identity: 80     # --minid, abricate's default
+  min_coverage: 80     # --mincov (abricate's default is 0)
