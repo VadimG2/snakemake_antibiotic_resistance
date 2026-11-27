@@ -104,7 +104,8 @@ decisions, with reasons, are in `docs/decisions.md`.
 
 ## Cite
 
-See `CITATION.cff` (GitHub: "Cite this repository"). Please also cite the
+Archived on Zenodo (sandbox, for the course): DOI 10.5281/zenodo.24586320, (all versions). See
+`CITATION.cff` (GitHub: "Cite this repository"). Please also cite the
 tools: SPAdes, QUAST, Prokka, Abricate and its databases (listed in the
 report).
 
