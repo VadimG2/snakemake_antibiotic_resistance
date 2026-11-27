@@ -1,0 +1,4 @@
+# Only pixi.toml and pixi.lock go into the image build
+*
+!pixi.toml
+!pixi.lock
