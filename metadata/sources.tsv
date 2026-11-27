@@ -1,0 +1,8 @@
+name	url	md5	unpack	dest
+DRR236068_1	https://ftp.sra.ebi.ac.uk/vol1/fastq/DRR236/DRR236068/DRR236068_1.fastq.gz	6ef7b12b4106c55d88dc07f65415bbbb	none	data/raw/fastq/DRR236068_1.fastq.gz
+DRR236068_2	https://ftp.sra.ebi.ac.uk/vol1/fastq/DRR236/DRR236068/DRR236068_2.fastq.gz	7b08ff1bdde412619b97f4b949122984	none	data/raw/fastq/DRR236068_2.fastq.gz
+DRR236029_1	https://ftp.sra.ebi.ac.uk/vol1/fastq/DRR236/DRR236029/DRR236029_1.fastq.gz	6de06449fba3c1799f3b9063d7e48f5d	none	data/raw/fastq/DRR236029_1.fastq.gz
+DRR236029_2	https://ftp.sra.ebi.ac.uk/vol1/fastq/DRR236/DRR236029/DRR236029_2.fastq.gz	47e8405dcfded69084a11d310388418b	none	data/raw/fastq/DRR236029_2.fastq.gz
+SRR20394268_1	https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR203/068/SRR20394268/SRR20394268_1.fastq.gz	648aaeb44a64c602bfa4be7454be0dc4	none	data/raw/fastq/SRR20394268_1.fastq.gz
+SRR20394268_2	https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR203/068/SRR20394268/SRR20394268_2.fastq.gz	42d22e9e2aef85281ea2ccfafb71ca0e	none	data/raw/fastq/SRR20394268_2.fastq.gz
+USA300_FPR3757	https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/013/465/GCF_000013465.1_ASM1346v1/GCF_000013465.1_ASM1346v1_genomic.fna.gz	d2d2844a6812fd29d4e453069b93bac7	none	data/raw/assemblies/USA300_FPR3757.fna.gz

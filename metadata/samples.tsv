@@ -1,0 +1,5 @@
+sample	strain	phenotype	country	study	biosample	run_or_assembly	fastq_1	fastq_2	assembly
+MRSA_K18-4-29	K18-4-29	MRSA	Japan	PRJDB10125	SAMD00233535	DRR236068	data/raw/fastq/DRR236068_1.fastq.gz	data/raw/fastq/DRR236068_2.fastq.gz	
+MRSA_K18-4-413	K18-4-413	MRSA	Japan	PRJDB10125	SAMD00233571	DRR236029	data/raw/fastq/DRR236029_1.fastq.gz	data/raw/fastq/DRR236029_2.fastq.gz	
+MSSA_Dublin	unnamed	MSSA	Ireland	PRJNA818983	SAMN29883857	SRR20394268	data/raw/fastq/SRR20394268_1.fastq.gz	data/raw/fastq/SRR20394268_2.fastq.gz	
+USA300_FPR3757	FPR3757	MRSA	USA	PRJNA16313	SAMN02604150	GCF_000013465.1			data/raw/assemblies/USA300_FPR3757.fna.gz
