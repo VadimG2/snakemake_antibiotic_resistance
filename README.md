@@ -1,68 +1,121 @@
-
-# README.md
-
-This Snakemake pipeline performs quality control, assembly, annotation, and antimicrobial resistance gene detection of bacterial genomes.  It supports two modes: processing raw reads or using pre-assembled genomes.
-
-
-## Pipeline Steps
-
-1. **Quality Control (FastQC):**  Performs quality control analysis of raw sequencing reads.  This step is skipped if a pre-assembled genome is provided.  Results are saved in the `test_output/fastqc` directory.
-
-
-2. **Genome Assembly (SPAdes):** Assembles raw sequencing reads into contigs and scaffolds using SPAdes. This step is skipped if a pre-assembled genome is provided. Results are saved in the `test_output/spades` directory.
-
-
-3. **Genome Assessment (QUAST):** Evaluates the quality of the assembled genome by comparing the contigs to a reference genome (if provided). This step is performed for all samples, whether they were assembled using SPAdes or a pre-assembled genome was used.  Results are saved in the `test_output/quast` directory.
-
-4. **Genome Annotation (Prokka):**  Annotates the assembled genome using Prokka. This step is performed for all samples (using either the provided genome or the result from SPAdes). Results are saved in the `test_output/prokka` directory.
-
-
-5. **Antimicrobial Resistance Gene Detection (Abricate):** Detects antimicrobial resistance genes in the assembled genome using Abricate.  This step is performed for all samples. Results are saved in the `test_output/abricate` directory.
-
-
-
-## Input Data
-
-*   **`samples.csv`:** A comma-separated value (CSV) file containing sample information.  It should have the following columns:
-    *   `sample_id`: A unique identifier for each sample.
-    *   `read_1`: The absolute path to the forward read file (FASTQ format).
-    *   `read_2`: The absolute path to the reverse read file (FASTQ format).
-    *   `assembly`: The name of the pre-assembled genome file (FASTA format) located in the `test_input` directory. Leave this column empty if you are providing raw reads instead of a pre-assembled genome.
-*   **`params.json`:** A JSON file containing parameters for the pipeline.  It should have the following structure:
-    ```json
-    {
-      "global_params": {
-        "threads": 2, //Number of threads
-        "outdir": "test_output" //Output directory
-      },
-      "spades": {
-        "threads": 2, //Number of threads for spades
-        "memory": "4G"  //Memory for spades
-      },
-      "quast": {
-        "reference": "/path/to/reference/genome.fasta" //Optional reference genome for QUAST. Leave empty if not using
-      },
-      "abricate": {
-        "database": "ResFinder" //Database for abricate
-      }
-    }
-    ```
-    Remember to replace `/path/to/reference/genome.fasta` with the actual path to your reference genome if you are using one.
-* **Pre-assembled genomes:** If you provide pre-assembled genomes, make sure they are located in the `test_input` directory.
-
-## Output Data
-
-The pipeline will create the following output directories: `test_output/fastqc`, `test_output/spades`, `test_output/quast`, `test_output/prokka`, and `test_output/abricate`.
-
-
-## Running the Pipeline
-
-1.  **Install Conda:** If you don't have Conda installed, install it from [https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html).
-2.  **Create conda environments:** Create conda environments for each tool specified in the Snakefile using the `envs/*.yaml` files.
-3.  **Run Snakemake:** Execute the pipeline using the following command:
-
-    ```bash
-    snakemake --use-conda
-    ```
-    Make sure that `samples.csv` and `params.json` are in the same directory as the `Snakefile`.
 # snakemake_antibiotic_resistance
+
+Assembly, annotation and antimicrobial resistance (AMR) gene detection for
+bacterial isolates, as a Snakemake workflow (FastQC → SPAdes → QUAST →
+Prokka → Abricate) that anyone can rerun with one command.
+
+Applied here to *Staphylococcus aureus*. Question: does the pipeline recover
+the reported methicillin phenotype (MRSA or MSSA) of each isolate from its
+genome, through the *mecA* gene, and which other acquired resistance genes do
+the isolates carry? Data: two clinical MRSA isolates from Japan, one MSSA
+isolate from Dublin, and the published MRSA reference genome USA300_FPR3757,
+which enters as a ready assembly (the pipeline accepts reads or assemblies).
+
+Author: VadimG2 (<https://github.com/VadimG2>). Capstone project of CBIO7501
+*The Art of Reproducible and Open Science* (fall 2026).
+
+## Publication
+
+None. The reference genome is described in Diep et al. (2006), *The Lancet*
+367:731–739, <https://doi.org/10.1016/S0140-6736(06)68231-7>.
+
+## Reproduce the results
+
+Requirements: [Pixi](https://pixi.prefix.dev/latest/) (tested with 0.85) and
+an internet connection. Runs on **Linux and macOS** (Intel and Apple Silicon).
+Prokka and QUAST 5 have no Apple Silicon (osx-arm64) builds, so on an Apple
+Silicon Mac Pixi installs the Intel (osx-64) builds of the pipeline tools and
+runs them through Rosetta 2 (install it once with
+`softwareupdate --install-rosetta`); expect it to be slower. The report
+environment is native everywhere. On Windows use WSL2. Alternatively, use the
+container image (`containers/README.md`). No other installation is needed.
+
+```bash
+git clone https://github.com/VadimG2/snakemake_antibiotic_resistance.git
+cd snakemake_antibiotic_resistance
+pixi install --locked            # optional: fails if pixi.lock and pixi.toml disagree
+pixi run reproduce
+```
+
+`pixi run reproduce`:
+
+1. installs the exact software versions in `pixi.lock`;
+2. downloads the raw data from ENA and NCBI (`pixi run download`) and checks
+   it against the providers' md5 and our sha256 (`metadata/`);
+3. runs the Snakemake workflow (`pixi run run-snakemake`, 4 cores; settings in
+   `config/config.yaml`);
+4. compares the main results with `metadata/expected_results.tsv`
+   (`pixi run check-results`);
+5. renders the report `reports/amr-report.html` (`pixi run report`).
+
+The *Reproduce* GitHub Action runs the same command from a clean clone on
+every push. `pixi task list` shows every task.
+
+## Hardware
+
+Any recent computer with 4 cores and 8 GB of memory. Measured on 2026-11-27
+on a cloud VM (2 cores of an Intel Xeon at 2.1 GHz, 7 GB of memory, Linux):
+the workflow took 26 minutes, SPAdes used at most 2.4 GB of memory. Disk:
+8 GB for the software environments (`.pixi/`), 222 MB for the raw data, 270 MB
+for the results. Most of the time goes to SPAdes (about 8 minutes per isolate
+on 2 cores).
+
+## Outputs
+
+| Path | Content |
+|------|---------|
+| `reports/amr-report.html` | The report: data, assemblies, resistance genes, software versions |
+| `results/tables/amr_hits.tsv` | Every resistance and virulence gene found (all databases) |
+| `results/tables/abricate_summary_<db>.tsv` | Gene presence per isolate, one file per database |
+| `results/tables/assembly_stats.tsv` | QUAST statistics per assembly |
+| `results/quast/`, `results/prokka/`, `results/spades/`, `results/fastqc/` | Full output of each tool |
+
+Expected main result (NCBI AMRFinder database, 80 % identity and coverage):
+*mecA* present in MRSA_K18-4-29, MRSA_K18-4-413 and USA300_FPR3757 and
+absent from MSSA_Dublin, so genotype and reported phenotype agree for all four
+genomes. The full list of expected genes per isolate is in
+`metadata/expected_results.tsv`; `pixi run check-results` compares a new run
+with it (gene lists must match exactly, assembly length within 2 %).
+
+## Data
+
+| Sample | Data | Source |
+|--------|------|--------|
+| MRSA_K18-4-29 | ENA run DRR236068 (Illumina MiSeq, paired) | BioProject PRJDB10125 |
+| MRSA_K18-4-413 | ENA run DRR236029 (Illumina MiSeq, paired) | BioProject PRJDB10125 |
+| MSSA_Dublin | ENA run SRR20394268 (Illumina MiSeq, paired) | BioProject PRJNA818983 |
+| USA300_FPR3757 | NCBI assembly GCF_000013465.1 | BioProject PRJNA16313 |
+
+Download links, provider checksums and our checksums are in `metadata/`; the
+data is not stored in this repository. Sample information is in
+`metadata/samples.tsv`.
+
+**Data availability.** All data are publicly available from the
+International Nucleotide Sequence Database Collaboration (ENA, NCBI, DDBJ)
+under the accessions above. INSDC places no restrictions on their use or
+redistribution; please cite the original submitters. All results can be
+regenerated from them with `pixi run reproduce`.
+
+## Repository contents
+
+See `docs/structure.md` (each folder also has its own README). Analysis
+decisions, with reasons, are in `docs/decisions.md`.
+
+## Cite
+
+See `CITATION.cff` (GitHub: "Cite this repository"). Please also cite the
+tools: SPAdes, QUAST, Prokka, Abricate and its databases (listed in the
+report).
+
+## License
+
+Code: MIT (`LICENSE`). Report text and figures: CC BY 4.0
+(`LICENSE-CC-BY-4.0.txt`). Data: INSDC, no restrictions (see Data).
+`scripts/download_data.py`, `containers/Dockerfile` and
+`.github/workflows/reproduce.yml` are adapted from the CBIO7501 course
+materials (MIT).
+
+## Contact
+
+Questions and problems: open an issue on GitHub. Contributions: see
+`CONTRIBUTING.md`. Everyone taking part follows `CODE_OF_CONDUCT.md`.

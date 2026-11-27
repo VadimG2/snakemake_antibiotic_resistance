@@ -1,0 +1,67 @@
+cff-version: 1.2.0
+message: "If you use this pipeline, please cite it as below."
+title: "snakemake_antibiotic_resistance: assembly, annotation and AMR gene detection in Staphylococcus aureus"
+abstract: >-
+  A reproducible Snakemake pipeline (FastQC, SPAdes, QUAST, Prokka, Abricate)
+  that assembles and annotates bacterial isolates and screens them for
+  antimicrobial resistance and virulence genes, applied to three clinical
+  Staphylococcus aureus isolates and the USA300_FPR3757 reference genome.
+type: software
+authors:
+  - alias: "VadimG2"
+repository-code: "https://github.com/VadimG2/snakemake_antibiotic_resistance"
+license: MIT
+version: 1.0.0
+date-released: "2026-11-27"
+keywords:
+  - reproducibility
+  - antimicrobial resistance
+  - Staphylococcus aureus
+  - MRSA
+  - Snakemake
+  - Pixi
+references:
+  - type: article
+    title: "SPAdes: a new genome assembly algorithm and its applications to single-cell sequencing"
+    authors:
+      - family-names: "Bankevich"
+        given-names: "Anton"
+      - name: "et al."
+    journal: "Journal of Computational Biology"
+    volume: 19
+    issue: 5
+    start: 455
+    end: 477
+    year: 2012
+    doi: "10.1089/cmb.2012.0021"
+  - type: article
+    title: "Prokka: rapid prokaryotic genome annotation"
+    authors:
+      - family-names: "Seemann"
+        given-names: "Torsten"
+    journal: "Bioinformatics"
+    volume: 30
+    issue: 14
+    start: 2068
+    end: 2069
+    year: 2014
+    doi: "10.1093/bioinformatics/btu153"
+  - type: software
+    title: "Abricate"
+    authors:
+      - family-names: "Seemann"
+        given-names: "Torsten"
+    url: "https://github.com/tseemann/abricate"
+  - type: article
+    title: "Complete genome sequence of USA300, an epidemic clone of community-acquired meticillin-resistant Staphylococcus aureus"
+    authors:
+      - family-names: "Diep"
+        given-names: "Binh An"
+      - name: "et al."
+    journal: "The Lancet"
+    volume: 367
+    issue: 9512
+    start: 731
+    end: 739
+    year: 2006
+    doi: "10.1016/S0140-6736(06)68231-7"
