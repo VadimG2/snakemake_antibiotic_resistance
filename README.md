@@ -16,9 +16,6 @@ Author: VadimG2 (<https://github.com/VadimG2>). Capstone project of CBIO7501
 Email: vadim.gvozdev@mbzuai.ac.ae
 
 ## Publication
-
-DOI: 10.5281/zenodo.24586321 
-
 The reference genome is described in Diep et al. (2006), *The Lancet*
 367:731–739, <https://doi.org/10.1016/S0140-6736(06)68231-7>.
 
